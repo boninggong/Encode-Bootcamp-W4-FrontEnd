@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 import {ethers} from 'ethers';
-import tokenJson from '../assets/MyERC20Token.json';
+import tokenJson from '../assets/MyERC20Votes.json';
 
 
 
@@ -14,17 +14,33 @@ export class AppComponent {
   provider;
   wallet: ethers.Wallet | undefined;
   tokenAddress: string | undefined;
+  ERC20VOTE_ADDRESS: string | undefined
+  BALLOT_ADDRESS: string | undefined
   tokenContract: ethers.Contract | undefined;
+  ballotContract: ethers.Contract | undefined
   etherBalance : number | undefined;
   tokenBalance : number | undefined;
   votePower : number | undefined;
+  signerAddress: string | undefined
   
   constructor(private http: HttpClient) {
     this.provider = ethers.providers.getDefaultProvider('goerli');
+    this.http.get<any>("http://localhost:3000/token-address").subscribe((ans) => {
+      this.ERC20VOTE_ADDRESS = ans.result
+      console.log(`ERC20Votes ${this.ERC20VOTE_ADDRESS}`)
+    })
+    this.http.get<any>("http://localhost:3000/ballot-address").subscribe((ans) => {
+      this.BALLOT_ADDRESS = ans.result
+      console.log(`Ballot ${this.BALLOT_ADDRESS}`)
+    })
+  }
+
+  connectMetamask() {
+    
   }
 
   createWallet() {
-    this.http.get<any>("http://localhost:3000/token-address").subscribe((ans) => {
+    this.http.get<any>("http://localhost:3000/token-address").subscribe((ans: { result: string | undefined; }) => {
       this.tokenAddress = ans.result;
       if(this.tokenAddress) {
         this.wallet = ethers.Wallet.createRandom().connect(this.provider);
@@ -42,17 +58,11 @@ export class AppComponent {
     });
   }
 
-  claimTokens() {
-    this.http.post<any>("http://localhost:3000/claim-tokens", {address:this.wallet?.address}).subscribe((ans) => {
-      const txHash = ans.result;
-      this.provider.getTransaction(txHash).then((tx) => {
-          tx.wait().then((receipt) => {
-            // TODO display
-            // Reload info by calling getBalltInfo etc.
-          });
-      });
-    });
-  }
+	claimTokens() {
+		this.http.post<any>('http://localhost:3000/claim-tokens', {address: this.signerAddress, amount: '10'}).subscribe((ans: any) => {
+			console.log({ ans })
+		})
+	}
 
   connectBallot(address: string) {
     this.getBallotInfo();
